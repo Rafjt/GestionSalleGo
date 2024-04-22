@@ -1,9 +1,12 @@
 package fonction
 
 import (
+	"bufio"
 	"database/sql"
 	"fmt"
+	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -78,14 +81,19 @@ func CreationReservations(db *sql.DB) error {
 
 	var title, date, timeInput, location, category, description string
 
+	reader := bufio.NewReader(os.Stdin)
+
 	fmt.Print("Entrez le titre de la réservation: ")
-	fmt.Scanln(&title)
+	title, _ = reader.ReadString('\n')
+	title = strings.TrimSpace(title)
 
 	fmt.Print("Entrez la date (YYYY-MM-DD): ")
-	fmt.Scanln(&date)
+	date, _ = reader.ReadString('\n')
+	date = strings.TrimSpace(date)
 
 	fmt.Print("Entrez l'heure (HH:mm): ")
-	fmt.Scanln(&timeInput)
+	timeInput, _ = reader.ReadString('\n')
+	timeInput = strings.TrimSpace(timeInput)
 
 	// pour éviter l'erreur de temps/date
 	dateTimeInput := fmt.Sprintf("%s %s", date, timeInput)
@@ -176,7 +184,7 @@ func VisualiserSalles(db *sql.DB) error {
 		fmt.Printf("|%-5d | %-20d | %-19d |\n", Salle.ID, Salle.Capacity, Salle.Dispo)
 	}
 
-	fmt.Println("-----------------------------------------------------")
+	fmt.Println("------------------------------------------------------------------------------------------------")
 
 	return nil
 }
