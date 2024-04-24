@@ -53,3 +53,15 @@ INSERT INTO salles (name, capacity, dispo) VALUES
 ```
 
 Cela crée la base de données et les tables nécessaires, puis insère des données de salle fictives pour démarrer.
+
+## Fonctions Principales
+
+Les principales fonctions de l'application sont les suivantes :
+
+1. `affichagePrincipal()`: Cette fonction affiche le menu principal à l'utilisateur et retourne le choix de l'utilisateur sous forme d'entier.
+2. `choixUtilisateur(choix int)`: Cette fonction prend le choix de l'utilisateur comme argument et effectue l'action correspondante. Les actions comprennent la création d'une réservation, la visualisation des salles disponibles, la suppression d'une réservation, la visualisation des réservations et la sortie de l'application.
+3. `main()`: Il s'agit de la fonction principale de l'application. Elle établit une connexion à la base de données et affiche continuellement le menu principal à l'utilisateur jusqu'à ce que l'utilisateur choisisse de quitter.
+
+## Exécution du Projet
+
+Pour exécuter le projet, accédez au répertoire du projet et exécutez la commande `go run main.go`.
