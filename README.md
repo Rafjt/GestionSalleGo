@@ -54,6 +54,41 @@ INSERT INTO salles (name, capacity, dispo) VALUES
 
 Cela crée la base de données et les tables nécessaires, puis insère des données de salle fictives pour démarrer.
 
+# Dépendances
+Le fichier importe plusieurs packages, notamment :
+
+- bufio : pour lire les données depuis l'entrée standard.
+- database/sql : pour interagir avec la base de données SQL.
+- fmt : pour formater les entrées/sorties.
+- os : pour interagir avec le système d'exploitation.
+- strconv : pour convertir des chaînes de caractères en d'autres types de données.
+- strings : pour manipuler les chaînes de caractères.
+- time : pour gérer les données temporelles.
+- github.com/go-sql-driver/mysql : le pilote pour se connecter à la base de données MySQL.
+
+Constantes
+Le fichier définit des constantes pour l'utilisateur de la base de données, le mot de passe et le nom.
+
+Structures
+Deux structures sont définies :
+
+- Room : représente une salle avec des champs pour l'ID, le nom, la capacité et la disponibilité.
+- Reservation : représente une réservation avec des champs pour le titre, la date, l'emplacement, la catégorie et la description.
+
+Fonctions
+Plusieurs fonctions sont définies :
+
+- ConnexionBdd() : se connecte à la base de données MySQL.
+- MakeSalleIndispobible() : met à jour la disponibilité d'une salle dans la base de données.
+- AddEvent() : insère une nouvelle réservation dans la base de données.
+- CreationReservations() : demande à l'utilisateur de saisir les détails d'une nouvelle réservation et l'ajoute à la base de données.
+- VisualiserSalles() : récupère et affiche toutes les salles disponibles depuis la base de données.
+- SupprimerReservation() : supprime une réservation de la base de données.
+- VisualiserReservations() : récupère et affiche toutes les réservations depuis la base de données.
+
+Utilisation
+Pour utiliser ces fonctions, vous devez avoir un serveur MySQL en cours d'exécution et une base de données configurée avec les tables et les données nécessaires. Vous pouvez ensuite appeler ces fonctions dans votre code Go pour gérer les réservations de salles.
+
 ## Fonctions Principales
 
 Les principales fonctions de l'application sont les suivantes :
