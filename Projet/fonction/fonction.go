@@ -170,7 +170,6 @@ func CreationReservations(db *sql.DB) error {
 		return fmt.Errorf("L'heure doit être entre 8h et 20h45.")
 	}
 
-	// Query the database to find available rooms at the given date and time
 	availableRooms, err := RechercheRoom(db, thenafter)
 	errors("Erreur lors de la récupération des salles disponibles: %v", err)
 
@@ -322,7 +321,6 @@ func ModifierReservation(db *sql.DB, locationID int) error {
 		return fmt.Errorf("L'heure doit être entre 8AM et 8:45PM.")
 	}
 
-	// Query the database to find available rooms at the given date and time
 	availableRooms, err := RechercheRoom(db, thenafter)
 	errors("Erreur lors de la récupération des salles disponibles: %v", err)
 
