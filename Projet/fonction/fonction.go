@@ -15,7 +15,7 @@ import (
 // Variables globales pour la connexion à la base de données
 const (
 	dbUser     = "root"
-	dbPassword = "root"
+	dbPassword = "1234.Azerty"
 	dbName     = "projetgolang"
 )
 
@@ -29,6 +29,7 @@ type Room struct {
 
 // Structure pour les réservations
 type Reservation struct {
+	ID          int
 	Title       string
 	Date        string
 	Location    string
@@ -41,6 +42,32 @@ func errors(strer string, err error) {
 	if err != nil {
 		fmt.Println(strer, err)
 	}
+}
+
+func RechercheRoom(db *sql.DB, date time.Time) (string, error) {
+	// On ajoute 1h30 à la date pour obtenir la date de fin du cours
+	endDate := date.Add(time.Hour*1 + time.Minute*30)
+
+	startDateStr := date.Format("2006-01-02 15:04")
+	endDateStr := endDate.Format("2006-01-02 15:04")
+
+	// LA query .
+	rows, err := db.Query("SELECT id FROM salles WHERE id NOT IN (SELECT salle_id FROM reservations WHERE date >= ? AND date <= ?)", startDateStr, endDateStr)
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+
+	var availableRooms []string
+	for rows.Next() {
+		var roomID int
+		if err := rows.Scan(&roomID); err != nil {
+			return "", err
+		}
+		availableRooms = append(availableRooms, strconv.Itoa(roomID))
+	}
+
+	return strings.Join(availableRooms, ", "), nil
 }
 
 // Fonction de connexion à la base de données
@@ -133,9 +160,25 @@ func CreationReservations(db *sql.DB) error {
 	thenafter, err := time.Parse(layout, dateTimeInput)
 	errors("Erreur lors de l'analyse du temps (Veuillez entrer une date dans le format 'YYYY-MM-DD' ): %v", err)
 
-	fmt.Print("Entrez la salle que vous souhaiter réserver (1-10): ")
+	if thenafter.Before(time.Now()) {
+		return fmt.Errorf("La date doit être dans le futur.")
+	}
+
+	// pour éviter les réservations après 20h45 et avant 8h
+	hour, _, _ := thenafter.Clock()
+	if hour < 8 || hour > 20 || (hour == 20 && thenafter.Minute() > 45) {
+		return fmt.Errorf("L'heure doit être entre 8AM et 8:45PM.")
+	}
+
+	// Query the database to find available rooms at the given date and time
+	availableRooms, err := RechercheRoom(db, thenafter)
+	errors("Erreur lors de la récupération des salles disponibles: %v", err)
+
+	fmt.Println("Salles disponibles: ", availableRooms)
+
+	fmt.Print("Entrez la salle que vous souhaiter réserver: ")
 	fmt.Scanln(&location)
-	if location != "1" && location != "2" && location != "3" && location != "4" && location != "5" && location != "6" && location != "7" && location != "8" && location != "9" && location != "10" {
+	if !strings.Contains(availableRooms, location) {
 		return fmt.Errorf("Salle invalide.")
 	}
 
@@ -180,11 +223,11 @@ func CreationReservations(db *sql.DB) error {
 func VisualiserSalles(db *sql.DB) error {
 	fmt.Println("--------------------------------------Visualiser les Salles--------------------------------------")
 
-	rows, err := db.Query("SELECT * FROM salles WHERE dispo = 1")
+	rows, err := db.Query("SELECT * FROM salles")
 	errors("Erreur lors de la récupération des événements: %v", err)
 	defer rows.Close()
 
-	fmt.Printf("|%-5s | %-20s | %-19s |\n", "numéro", "capacité", "disponibilité")
+	fmt.Printf("|%-5s | %-20s |\n", "numéro", "capacité")
 	fmt.Println("-----------------------------------------------------")
 
 	for rows.Next() {
@@ -192,7 +235,7 @@ func VisualiserSalles(db *sql.DB) error {
 		if err := rows.Scan(&Salle.ID, &Salle.Name, &Salle.Capacity, &Salle.Dispo); err != nil {
 			return fmt.Errorf("Erreur lors de la lecture de la ligne d'événement: %v", err)
 		}
-		fmt.Printf("|%-5d | %-20d | %-19d |\n", Salle.ID, Salle.Capacity, Salle.Dispo)
+		fmt.Printf("|%-5d | %-13d places |\n", Salle.ID, Salle.Capacity)
 	}
 
 	fmt.Println("------------------------------------------------------------------------------------------------")
@@ -220,24 +263,24 @@ func SupprimerReservation(db *sql.DB, locationID int) error {
 
 // Fonction pour visualiser les réservations
 func VisualiserReservations(db *sql.DB) error {
-	fmt.Println("--------------------------------------Visualiser les réservations--------------------------------------")
+	fmt.Println("--------------------------------------Visualiser les réservations-----------------------------------------------------------------------------------")
 
-	rows, err := db.Query("SELECT name, date, cours, description, salle_id FROM reservations")
+	rows, err := db.Query("SELECT id, name, date, cours, description, salle_id FROM reservations")
 	errors("Erreur lors de la récupération des réservations: %v", err)
 	defer rows.Close()
 
-	fmt.Printf("|%-20s | %-19s | %-20s | %-19s | %-19s |\n", "name", "date", "cours", "n de salle", "Description")
-	fmt.Println("-------------------------------------------------------------------------------------------------------------------")
+	fmt.Printf("|%-20s |%-20s | %-19s | %-20s | %-19s | %-19s |\n", "id", "nom", "date", "cours", "n de salle", "Description")
+	fmt.Println("----------------------------------------------------------------------------------------------------------------------------------------------------")
 
 	for rows.Next() {
 		var reservation Reservation
-		if err := rows.Scan(&reservation.Title, &reservation.Date, &reservation.Category, &reservation.Description, &reservation.Location); err != nil {
+		if err := rows.Scan(&reservation.ID, &reservation.Title, &reservation.Date, &reservation.Category, &reservation.Description, &reservation.Location); err != nil {
 			return fmt.Errorf("Erreur lors de la lecture de la ligne de réservation: %v", err)
 		}
-		fmt.Printf("|%-20s | %-19s | %-20s | %-19s | %-19s |\n", reservation.Title, reservation.Date, reservation.Category, reservation.Location, reservation.Description)
+		fmt.Printf("|%-20d |%-20s | %-19s | %-20s | %-19s | %-19s |\n", reservation.ID, reservation.Title, reservation.Date, reservation.Category, reservation.Location, reservation.Description)
 	}
 
-	fmt.Println("-------------------------------------------------------------------------------------------------------------------")
+	fmt.Println("----------------------------------------------------------------------------------------------------------------------------------------------------")
 
 	return nil
 }
@@ -248,14 +291,19 @@ func ModifierReservation(db *sql.DB, locationID int) error {
 
 	var title, date, timeInput, location, category, description string
 
+	reader := bufio.NewReader(os.Stdin)
+
 	fmt.Print("Entrez le titre de la réservation: ")
-	fmt.Scanln(&title)
+	title, _ = reader.ReadString('\n')
+	title = strings.TrimSpace(title)
 
 	fmt.Print("Entrez la date (YYYY-MM-DD): ")
-	fmt.Scanln(&date)
+	date, _ = reader.ReadString('\n')
+	date = strings.TrimSpace(date)
 
 	fmt.Print("Entrez l'heure (HH:mm): ")
-	fmt.Scanln(&timeInput)
+	timeInput, _ = reader.ReadString('\n')
+	timeInput = strings.TrimSpace(timeInput)
 
 	// pour éviter l'erreur de temps/date
 	dateTimeInput := fmt.Sprintf("%s %s", date, timeInput)
@@ -264,9 +312,25 @@ func ModifierReservation(db *sql.DB, locationID int) error {
 	thenafter, err := time.Parse(layout, dateTimeInput)
 	errors("Erreur lors de l'analyse du temps (Veuillez entrer une date dans le format 'YYYY-MM-DD' ): %v", err)
 
-	fmt.Print("Entrez la salle que vous souhaiter réserver (1-10): ")
+	if thenafter.Before(time.Now()) {
+		return fmt.Errorf("La date doit être dans le futur.")
+	}
+
+	// pour éviter les réservations après 20h45 et avant 8h
+	hour, _, _ := thenafter.Clock()
+	if hour < 8 || hour > 20 || (hour == 20 && thenafter.Minute() > 45) {
+		return fmt.Errorf("L'heure doit être entre 8AM et 8:45PM.")
+	}
+
+	// Query the database to find available rooms at the given date and time
+	availableRooms, err := RechercheRoom(db, thenafter)
+	errors("Erreur lors de la récupération des salles disponibles: %v", err)
+
+	fmt.Println("Salles disponibles: ", availableRooms)
+
+	fmt.Print("Entrez la salle que vous souhaiter réserver: ")
 	fmt.Scanln(&location)
-	if location != "1" && location != "2" && location != "3" && location != "4" && location != "5" && location != "6" && location != "7" && location != "8" && location != "9" && location != "10" {
+	if !strings.Contains(availableRooms, location) {
 		return fmt.Errorf("Salle invalide.")
 	}
 
