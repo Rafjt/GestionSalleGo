@@ -167,7 +167,7 @@ func CreationReservations(db *sql.DB) error {
 	// pour éviter les réservations après 20h45 et avant 8h
 	hour, _, _ := thenafter.Clock()
 	if hour < 8 || hour > 20 || (hour == 20 && thenafter.Minute() > 45) {
-		return fmt.Errorf("L'heure doit être entre 8AM et 8:45PM.")
+		return fmt.Errorf("L'heure doit être entre 8h et 20h45.")
 	}
 
 	// Query the database to find available rooms at the given date and time
